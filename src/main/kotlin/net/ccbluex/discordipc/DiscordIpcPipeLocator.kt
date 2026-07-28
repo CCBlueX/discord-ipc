@@ -3,6 +3,7 @@ package net.ccbluex.discordipc
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
+import java.util.function.Predicate
 
 internal object DiscordIpcPipeLocator {
 
@@ -20,7 +21,7 @@ internal object DiscordIpcPipeLocator {
         platform: DiscordIpcPlatform,
         environment: Map<String, String>,
         javaTemporaryDirectory: String?,
-        isDirectory: (Path) -> Boolean,
+        isDirectory: Predicate<Path>,
     ): List<String> = when (platform) {
         DiscordIpcPlatform.WINDOWS -> List(MAX_PIPE_COUNT) { "\\\\.\\pipe\\discord-ipc-$it" }
         DiscordIpcPlatform.UNIX -> locateUnix(environment, javaTemporaryDirectory, isDirectory)
@@ -30,19 +31,21 @@ internal object DiscordIpcPipeLocator {
     private fun locateUnix(
         environment: Map<String, String>,
         javaTemporaryDirectory: String?,
-        isDirectory: (Path) -> Boolean,
+        isDirectory: Predicate<Path>,
     ): List<String> {
-        val baseDirectories = LinkedHashSet<Path>()
-        environmentVariables.mapNotNullTo(baseDirectories) { variable -> environment[variable].toPathOrNull() }
-        javaTemporaryDirectory.toPathOrNull()?.let(baseDirectories::add)
-        baseDirectories.add(Path.of("/tmp"))
+        val baseDirectories = buildSet {
+            environmentVariables.mapNotNullTo(this) { variable -> environment[variable].toPathOrNull() }
+            javaTemporaryDirectory.toPathOrNull()?.let(this::add)
+            this.add(Path.of("/tmp"))
+        }
 
-        val pipeDirectories = LinkedHashSet<Path>()
-        baseDirectories.forEach { baseDirectory ->
-            pipeDirectories.add(baseDirectory)
-            sandboxSubdirectories
-                .map(baseDirectory::resolve)
-                .filterTo(pipeDirectories, isDirectory)
+        val pipeDirectories = buildSet {
+            baseDirectories.forEach { baseDirectory ->
+                this.add(baseDirectory)
+                sandboxSubdirectories
+                    .map(baseDirectory::resolve)
+                    .filterTo(this, isDirectory::test)
+            }
         }
 
         return pipeDirectories.flatMap { directory ->
