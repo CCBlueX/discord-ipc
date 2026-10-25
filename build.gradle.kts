@@ -12,7 +12,7 @@ val authorName = "ccbluex"
 val projectUrl = "https://github.com/ccbluex/discord-ipc"
 
 group = "net.ccbluex"
-version = "1.0.0-SNAPSHOT"
+version = providers.gradleProperty("releaseVersion").getOrElse("1.0.0-SNAPSHOT")
 
 repositories {
     mavenCentral()
