@@ -59,8 +59,6 @@ publishing {
     publications {
         create<MavenPublication>("pub") {
             from(components["java"])
-            artifact(tasks["sourcesJar"])
-            artifact(tasks["javadocJar"])
 
             pom {
                 name.set(projectName)

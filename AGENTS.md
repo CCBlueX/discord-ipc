@@ -14,7 +14,7 @@ named pipe / unix socket directly — no Discord SDK, no HTTP, no OAuth.
 - `DiscordIpcClient` — the public entry point: pipe probing, handshake, reader thread, PING→PONG,
   `SET_ACTIVITY`. Identical activities are deduplicated by their serialized JSON.
 - `DiscordIpcTransport` — `internal`: Windows (`FileChannel` on `\\.\pipe\discord-ipc-N`, 50 ms poll
-  loop because a blocking pipe read cannot be interrupted) and Unix (`AF_UNIX` `SocketChannel`).
+  loop, since a blocking pipe read cannot be interrupted) and Unix (`AF_UNIX` `SocketChannel`).
 - `DiscordIpcPipeLocator` — `internal`: candidate paths per platform (`XDG_RUNTIME_DIR`/`TMPDIR`/
   `TMP`/`TEMP`, snap/flatpak subdirs, indices 0–9).
 - `DiscordIpcFrame` — 8-byte little-endian header (`opcode`, `payloadSize`) + UTF-8 JSON, 1 MiB cap.
@@ -38,7 +38,6 @@ named pipe / unix socket directly — no Discord SDK, no HTTP, no OAuth.
 
 ## Gotchas
 
-- `tasks.withType<Jar>` packages the repo-root `LICENSE`, and `publishing` declares `sourcesJar` /
-  `javadocJar`. Removing either file or task breaks `build` / `publish`.
-- Licensed Apache-2.0 (see `LICENSE`). Contributions are accepted under the same terms; keep the
-  copyright notice in place.
+- `tasks.withType<Jar>` packages the repo-root `LICENSE`, and the `-sources` / `-javadoc` artifacts
+  come from `java { withSourcesJar(); withJavadocJar() }` via `from(components["java"])`.
+- Licensed under Apache-2.0 (see `LICENSE`).
